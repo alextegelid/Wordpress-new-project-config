@@ -7,6 +7,9 @@ This little script will save you the hassle of all the repetitives tasks each ti
 ##So what it does?
 The script will
 - Prompt you for a project name
+- Promp you for the development domain name / virtual host name (optional)
+- Backup your current httpd-hosts.conf and hosts files (optional)
+- Rewrite your httpd-hosts.conf and hosts files to add a virtual host (optional)
 - Create a new folder with the project name
 - Fetch and Install the latest wordpress build
 - Remove readme.html and license.txt
@@ -21,15 +24,10 @@ The script will
 - Create a wp-config-local.php file for local database parameters 
 - Exclude wp-config-local.php in .gitignore and Sublime ftp config file 
 - Create a Sublime text 2 project config file (projectName.sublime-project)
-- Configure .sublime-project file with 3 folders : 
-	- My theme
-	- plugins
-	- All website (it will be helpfull for the 1st migration on a remote server)
 - Prompt you if you want to configure ftp for Sublime text 2
 - Create a Sublime text 2 sFTP config file sftp-config.json in each folder.
 - Create a new project in codeKit 
 - Launch your project in Sublime text 2
-- Open your newly created wordpress website in your favourite browser
 
 ##Requirements
 - I created this script for MAC, I don't know if it works on other platforms.
@@ -50,6 +48,8 @@ You can edit the script with your favourite code editor and change some variable
 - PLUGINS_URL is a list of plugins from the wordpress.org plugin directory
 - DB_USER, DB_PASSWORD, DB_HOST these are the defaults for MAMP
 - LOCAL_URL default is localhost:8888/ for MAMP but you could have changed it
+- VHOSTS_DIR the directory containing the httpd-vhosts.conf file (not the file itself).
+- HOSTS_DIR the directory containing the hosts file (not the file itself).
 
 and for sure, you can modify or delete some part not useful for you
 
@@ -59,6 +59,11 @@ The .command extension allow to make the script double clickable
 Tip : If you are using Alfred or an other launcher application, you can execute the script from everywhere! 
 
 ##Changelog
+
+###v1.4
+- Now supports the setup of virtual hosts
+- Added config settings for the virtual hosts
+- Only supports MAMP
 
 ###v1.3.2
 - fixe a mySQL issue

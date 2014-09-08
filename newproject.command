@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Version = 1.3.2
+# Version = 1.4
 # 
 
 
@@ -26,6 +26,26 @@ while [[ -z "$PROJECT_NAME" ]]; do
 done
 
 # --------------------
+# Set development domain
+# --------------------
+if [[ "$VHOSTS_DIR" && "$HOSTS_DIR" ]]
+then
+
+echo "What is the projects development domain name?"
+read DEV_DOMAIN_NAME
+while [[ -z "$DEV_DOMAIN_NAME" ]]; do
+    echo "Please, type your projects development domain name:"
+    read DEV_DOMAIN_NAME
+done
+
+fi
+
+# --------------------
+# Set database name
+# --------------------
+PROJECT_DB_NAME=`echo $PROJECT_NAME | cut -d . -f 1`
+
+# --------------------
 # Create database
 # --------------------
 echo "For local database configuration, I will use project name as database name, I just need table prefix (default : wp_)"
@@ -33,7 +53,7 @@ read TABLE_PREFIX
 if [[ $TABLE_PREFIX == "" ]]; then
 	TABLE_PREFIX="wp_"
 fi
-$MYSQL_PATH -u$DB_USER -p$DB_PASSWORD -e "create database "$PROJECT_NAME
+$MYSQL_PATH -h$DB_HOST -u$DB_USER -p$DB_PASSWORD -e "CREATE DATABASE IF NOT EXISTS "$PROJECT_DB_NAME
 
 # --------------------
 # Set FTP parmmeters for sublime SFTP mapping
@@ -123,7 +143,7 @@ rm -rf wordpress && rm readme.html && rm license.txt
 # Fetch H5BP server-config .htaccess
 # --------------------
 git clone https://github.com/h5bp/server-configs-apache.git
-cp server-configs-apache/.htaccess .htaccess
+cp server-configs-apache/dist/.htaccess .htaccess
 rm -rf server-configs
 
 # --------------------
@@ -157,7 +177,7 @@ echo 'Create wp-config...'
 cd $PROJECT_DIR
 touch wp-config-local.php
 echo "<?php
-define( 'DB_NAME', '"$PROJECT_NAME"' );
+define( 'DB_NAME', '"$PROJECT_DB_NAME"' );
 define( 'DB_USER', '"$DB_USER"' );
 define( 'DB_PASSWORD', '"$DB_PASSWORD"' );
 define( 'DB_HOST', '"$DB_HOST"' );" >wp-config-local.php
@@ -201,29 +221,13 @@ rm salt.txt
 # Create Sublime Project config file
 # --------------------
 echo 'Create Sublime text 2 project file...'
-SUBLIME_PROJECT_FILE=$PROJECT_NAME".sublime-project"
+SUBLIME_PROJECT_FILE=$PROJECT_DB_NAME".sublime-project"
 touch $SUBLIME_PROJECT_FILE
 echo '{
 	"folders":
 	[
-		
-		{
-			"path": "./wp-content/themes/'$PROJECT_NAME'",
-			"name": "My theme",
-			"file_exclude_patterns":[
-				"._*"
-			],
-			"folder_exclude_patterns": [".sass-cache"]
-		},
-		{
-			"path": "./wp-content/plugins",
-			"file_exclude_patterns":[
-				"._*"
-			]
-		},
 		{
 			"path": ".",
-			"name": "All website",
 			"file_exclude_patterns":[
 				"._*",
 				"*.sublime-project",
@@ -292,12 +296,45 @@ if [[ $FTP_HOST != "" ]]; then
 	create_FTP_file $FTP_ROOT"/wp-content/plugins"
 fi
 
+
 # --------------------
-# Launch sublime project
+# Creating development virtual host
 # --------------------
-echo 'Launch Sublime text 2'
-cd $PROJECT_DIR
-"$SUBLIME_PATH" $SUBLIME_PROJECT_FILE
+if [[ "$VHOSTS_DIR" && "$HOSTS_DIR" ]]
+then
+
+# Backup
+BACKUP_TIMESTAMP=`date +%Y-%m-%d_%H-%M`
+sudo cp $VHOSTS_DIR'httpd-vhosts.conf' $VHOSTS_DIR'httpd-vhosts-'$BACKUP_TIMESTAMP'.conf~bak'
+sudo cp $HOSTS_DIR'hosts' $HOSTS_DIR'hosts-'$BACKUP_TIMESTAMP'~bak'
+
+# Write new
+echo '
+
+127.0.0.1 '$DEV_DOMAIN_NAME'
+127.0.0.1 www.'$DEV_DOMAIN_NAME | sudo tee -a $HOSTS_DIR'hosts'
+
+echo '
+
+<Directory "'$PROJECT_DIR'">
+Allow From All
+AllowOverride All
+</Directory>
+<VirtualHost *:80>
+    ServerName "'$DEV_DOMAIN_NAME'"
+    ServerAlias "www.'$DEV_DOMAIN_NAME'"
+    DocumentRoot "'$PROJECT_DIR'"
+</VirtualHost>' | sudo tee -a $VHOSTS_DIR'httpd-vhosts.conf'
+
+# --------------------
+# Restart servers
+# --------------------
+echo "Restarting MAMP Apache Server"
+sudo /Applications/MAMP/bin/stopApache.sh
+while pgrep -u root httpd > /dev/null; do sleep 1; done
+sudo /Applications/MAMP/bin/startApache.sh
+fi
+
 
 # --------------------
 # Create a new project in CodeKit
@@ -317,8 +354,16 @@ wp-config-local.php
 # --------------------
 # Launch default browser
 # --------------------
-echo 'Launch browser'
-open $LOCAL_URL$PROJECT_NAME
+# echo 'Launch browser'
+# open $LOCAL_URL$PROJECT_NAME
 
-echo 'Installation Complete, press enter to quit'
+echo 'Installation Complete!
+Press enter to launch the project in Sublime Text 2'
 read
+
+# --------------------
+# Launch sublime project
+# --------------------
+echo 'Launch Sublime text 2'
+cd $PROJECT_DIR
+"$SUBLIME_PATH" $SUBLIME_PROJECT_FILE
