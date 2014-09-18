@@ -129,7 +129,7 @@ function fetch_zip()
 # --------------------
 mkdir $PROJECT_NAME
 PROJECT_DIR=$DIRECTORY"/"$PROJECT_NAME
-cd $PROJECT_NAME
+cd $PROJECT_DIR
 
 # --------------------
 # Fetch Wordpress latest build
